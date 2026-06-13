@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>เลิฟชาไทย — สั่งเครื่องดื่ม</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+  :root{
+    --bg:#FAF6F0;
+    --paper:#FFFDF9;
+    --card:#F1E9DC;
+    --ink:#3D3229;
+    --ink-soft:#7A6F62;
+    --matcha:#7A8B5C;
+    --matcha-deep:#5E6F45;
+    --terracotta:#C97B5C;
+    --line:#E2D6C3;
+    --shadow: 0 8px 24px -8px rgba(61,50,41,0.18);
+  }
+  *{ box-sizing:border-box; }
+  html,body,#root{ height:100%; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter','Noto Sans Thai',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .display{ font-family:'Fraunces','Noto Sans Thai',serif; }
+  .mono{ font-family:'JetBrains Mono', monospace; font-feature-settings:"tnum"; }
+
+  /* ---------- App shell ---------- */
+  .app{
+    max-width:480px;
+    margin:0 auto;
+    min-height:100vh;
+    background:var(--bg);
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+
+  /* ---------- Topbar ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    background:var(--bg);
+    padding:18px 20px 12px;
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-row{
+    display:flex; align-items:flex-end; justify-content:space-between;
+  }
+  .brand{
+    font-size:28px; font-weight:600; letter-spacing:0.01em;
+  }
+  .brand-eyebrow{
+    font-size:11px; letter-spacing:0.18em; text-transform:uppercase;
+    color:var(--matcha-deep); font-weight:600; margin-bottom:2px;
+  }
+  .admin-link{
+    font-size:12px; color:var(--ink-soft); text-decoration:none;
+    border:1px solid var(--line); padding:6px 10px; border-radius:999px;
+    background:var(--paper); white-space:nowrap;
+  }
+
+  /* category chips */
+  .chips{
+    display:flex; gap:8px; overflow-x:auto; padding:14px 20px 0;
+    scrollbar-width:none;
+  }
+  .chips::-webkit-scrollbar{ display:none; }
+  .chip{
+    flex:none;
+    padding:7px 16px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    font-size:13px; font-weight:500; color:var(--ink-soft);
+    cursor:pointer; transition:all .15s ease; white-space:nowrap;
+  }
+  .chip.active{
+    background:var(--matcha); color:#fff; border-color:var(--matcha);
+  }
+
+  /* ---------- Menu grid ---------- */
+  .menu-list{ padding:16px 20px 100px; display:flex; flex-direction:column; gap:14px; flex:1; }
+  .menu-card{
+    display:flex; gap:14px;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:12px;
+    cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .menu-card:hover{ box-shadow:var(--shadow); transform:translateY(-1px); }
+  .menu-card img{
+    width:84px; height:84px; border-radius:14px; object-fit:cover; flex:none;
+    background:var(--card);
+  }
+  .menu-card-body{ flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:4px; }
+  .menu-card-name{ font-size:16px; font-weight:600; }
+  .menu-card-desc{ font-size:12.5px; color:var(--ink-soft); line-height:1.4; }
+  .menu-card-price{ font-size:14px; font-weight:700; color:var(--matcha-deep); margin-top:2px; }
+
+  /* ---------- Floating cart bar ---------- */
+  .cart-bar{
+    position:sticky; bottom:0; left:0; right:0;
+    background:var(--ink); color:#fff;
+    margin:0 16px 16px; border-radius:16px;
+    padding:14px 18px;
+    display:flex; align-items:center; justify-content:space-between;
+    box-shadow:0 10px 30px -10px rgba(61,50,41,0.5);
+    cursor:pointer;
+    animation:slideUp .25s ease;
+  }
+  @keyframes slideUp{ from{ transform:translateY(80px); opacity:0;} to{ transform:translateY(0); opacity:1;} }
+  .cart-bar-left{ display:flex; align-items:center; gap:10px; }
+  .cart-badge{
+    background:var(--terracotta); color:#fff;
+    font-size:12px; font-weight:700;
+    width:24px; height:24px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .cart-bar-text{ font-size:14px; font-weight:600; }
+  .cart-bar-total{ font-size:16px; font-weight:700; }
+
+  /* ---------- Sheet / modal ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(61,50,41,0.4);
+    z-index:50; display:flex; align-items:flex-end; justify-content:center;
+    animation:fadeIn .15s ease;
+  }
+  @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+  .sheet{
+    width:100%; max-width:480px;
+    background:var(--bg);
+    border-radius:24px 24px 0 0;
+    max-height:92vh; overflow-y:auto;
+    animation:sheetUp .25s ease;
+    position:relative;
+  }
+  @keyframes sheetUp{ from{ transform:translateY(40px); opacity:0;} to{ transform:translateY(0); opacity:1;} }
+  .sheet-handle{
+    width:36px; height:4px; background:var(--line); border-radius:99px;
+    margin:10px auto 0;
+  }
+  .sheet-close{
+    position:absolute; top:14px; right:16px;
+    width:32px; height:32px; border-radius:50%;
+    border:1px solid var(--line); background:var(--paper);
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; color:var(--ink-soft); cursor:pointer; z-index:5;
+  }
+
+  /* item detail */
+  .item-hero{ width:100%; height:220px; object-fit:contain; background:var(--card); }
+  .item-detail-body{ padding:20px 22px 24px; }
+  .item-title{ font-size:24px; font-weight:700; margin:0 0 4px; }
+  .item-price{ font-size:16px; font-weight:700; color:var(--matcha-deep); margin-bottom:14px; }
+  .item-desc{ font-size:13.5px; color:var(--ink-soft); line-height:1.6; margin-bottom:20px; }
+
+  .section-label{
+    font-size:11px; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--ink-soft); font-weight:700; margin-bottom:10px;
+  }
+  .option-grid{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; }
+  .option-pill{
+    padding:9px 16px; border-radius:999px;
+    border:1px solid var(--line); background:var(--paper);
+    font-size:13.5px; font-weight:500; color:var(--ink); cursor:pointer;
+  }
+  .option-pill.active{
+    background:var(--ink); color:#fff; border-color:var(--ink);
+  }
+
+  .qty-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+  .qty-control{ display:flex; align-items:center; gap:14px; }
+  .qty-btn{
+    width:36px; height:36px; border-radius:50%;
+    border:1px solid var(--line); background:var(--paper);
+    font-size:18px; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--ink); user-select:none;
+  }
+  .qty-val{ font-size:17px; font-weight:700; min-width:24px; text-align:center; }
+
+  .primary-btn{
+    width:100%; padding:16px; border:none; border-radius:14px;
+    background:var(--terracotta); color:#fff;
+    font-size:15px; font-weight:700; cursor:pointer;
+    display:flex; align-items:center; justify-content:space-between; padding-inline:20px;
+    font-family:inherit;
+    transition:opacity .15s;
+  }
+  .primary-btn:active{ opacity:0.85; }
+  .primary-btn:disabled{ background:var(--line); color:var(--ink-soft); cursor:not-allowed; }
+  .secondary-btn{
+    width:100%; padding:14px; border-radius:14px; border:1px solid var(--line);
+    background:var(--paper); color:var(--ink); font-weight:600; font-size:14px;
+    cursor:pointer; font-family:inherit;
+  }
+
+  /* ---------- Receipt / Cart sheet ---------- */
+  .receipt{
+    background:var(--paper);
+    margin:16px 20px 0;
+    border-radius:18px;
+    padding:20px 18px;
+    position:relative;
+  }
+  .receipt-title{ font-size:13px; letter-spacing:0.14em; text-transform:uppercase; font-weight:700; color:var(--ink-soft); text-align:center; margin-bottom:14px; }
+  .receipt-line{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    padding:10px 0; border-bottom:1px dashed var(--line);
+    font-size:13.5px; gap:10px;
+  }
+  .receipt-line:last-child{ border-bottom:none; }
+  .receipt-line-main{ flex:1; }
+  .receipt-line-name{ font-weight:600; margin-bottom:2px; }
+  .receipt-line-meta{ font-size:11.5px; color:var(--ink-soft); }
+  .receipt-line-price{ font-weight:700; white-space:nowrap; }
+  .receipt-remove{
+    font-size:11px; color:var(--terracotta); cursor:pointer; margin-top:4px; display:inline-block;
+  }
+  .receipt-total-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding-top:14px; margin-top:6px; border-top:1px solid var(--ink);
+    font-size:16px; font-weight:700;
+  }
+  .perf{
+    height:14px; margin:0 -2px;
+    background-image: radial-gradient(circle 7px, var(--bg) 99%, transparent 100%);
+    background-size: 22px 22px;
+    background-position: -4px -7px;
+  }
+
+  /* checkout sections */
+  .checkout-section{ padding:18px 22px 0; }
+  .pickup-grid{ display:flex; flex-direction:column; gap:10px; }
+  .pickup-card{
+    border:1px solid var(--line); border-radius:14px; padding:14px 16px;
+    background:var(--paper); cursor:pointer;
+  }
+  .pickup-card.active{ border-color:var(--matcha); background:#F2F5EC; }
+  .pickup-card-title{ font-weight:600; font-size:14px; margin-bottom:2px; }
+  .pickup-card-sub{ font-size:12px; color:var(--ink-soft); }
+  .pickup-inputs{ display:flex; gap:10px; margin-top:10px; }
+  .pickup-inputs input{
+    flex:1; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+    font-size:14px; font-family:inherit; background:#fff; color:var(--ink);
+  }
+  .pay-grid{ display:flex; flex-direction:column; gap:10px; }
+
+  .empty-state{
+    text-align:center; padding:60px 30px; color:var(--ink-soft);
+  }
+  .empty-state .display{ font-size:20px; color:var(--ink); margin-bottom:6px; }
+
+  /* success */
+  .success-wrap{ padding:50px 30px 40px; text-align:center; }
+  .success-icon{
+    width:64px; height:64px; border-radius:50%; background:var(--matcha);
+    display:flex; align-items:center; justify-content:center; margin:0 auto 18px;
+    color:#fff; font-size:30px;
+  }
+  .success-icon.warn{ background:var(--terracotta); }
+  .success-title{ font-size:22px; font-weight:700; margin-bottom:6px; }
+  .success-sub{ font-size:13.5px; color:var(--ink-soft); margin-bottom:28px; line-height:1.6; }
+  .order-id{
+    display:inline-block; background:var(--card); padding:6px 14px; border-radius:8px;
+    font-size:13px; font-weight:700; letter-spacing:0.06em; margin-bottom:24px;
+  }
+
+  /* ---------- Admin ---------- */
+  .admin-bar{
+    position:sticky; top:0; z-index:20; background:var(--bg);
+    padding:18px 20px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .admin-list{ padding:16px 20px 100px; display:flex; flex-direction:column; gap:12px; }
+  .admin-card{
+    background:var(--paper); border:1px solid var(--line); border-radius:16px;
+    padding:12px; display:flex; gap:12px; align-items:center;
+  }
+  .admin-card img{ width:60px; height:60px; border-radius:12px; object-fit:cover; background:var(--card); flex:none; }
+  .admin-card-body{ flex:1; min-width:0; }
+  .admin-card-name{ font-weight:600; font-size:14.5px; }
+  .admin-card-price{ font-size:12.5px; color:var(--matcha-deep); font-weight:700; }
+  .admin-actions{ display:flex; gap:6px; }
+  .icon-btn{
+    width:32px; height:32px; border-radius:9px; border:1px solid var(--line);
+    background:#fff; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:14px; color:var(--ink-soft);
+  }
+  .icon-btn.danger{ color:var(--terracotta); border-color:#F0DCD2; }
+
+  .form-field{ margin-bottom:14px; }
+  .form-label{ font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:6px; display:block; text-transform:uppercase; letter-spacing:0.1em; }
+  .form-input, .form-textarea{
+    width:100%; padding:11px 14px; border-radius:12px; border:1px solid var(--line);
+    font-size:14px; font-family:inherit; background:#fff; color:var(--ink); resize:vertical;
+  }
+  .add-btn{
+    width:100%; padding:14px; border-radius:14px; border:1.5px dashed var(--matcha);
+    background:transparent; color:var(--matcha-deep); font-weight:700; font-size:14px;
+    cursor:pointer; font-family:inherit; margin-top:4px;
+  }
+
+  /* badge for sold out */
+  .soldout{ filter:grayscale(0.7); opacity:0.55; }
+  .soldout-tag{
+    font-size:11px; font-weight:700; color:#fff; background:var(--ink-soft);
+    padding:2px 8px; border-radius:6px; align-self:flex-start; margin-bottom:4px;
+  }
+
+  /* loading screen */
+  .loading-screen{
+    display:flex; align-items:center; justify-content:center;
+    height:100vh; flex-direction:column; gap:12px; color:var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  // ===== ตั้งค่า LIFF ID ตรงนี้ =====
+  window.LIFF_ID = "2010384455-EvksecH8"; // เช่น "1234567890-abcdefgh"
+</script>
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useMemo } = React;
+
+/* ---------------------------------------------------
+   ข้อมูลเมนู
+--------------------------------------------------- */
+const DEFAULT_MENU = [
+  {
+    id: "m1",
+    name: "ชาไทยใส่ขวด",
+    price: 39,
+    category: "ชา",
+    desc: "",
+    image: "https://img2.pic.in.th/IMG_21863fdf22bd15e6a5e6.jpeg",
+    soldOut: false,
+  },
+  {
+    id: "m2",
+    name: "ชาไทย พร้อมดื่ม",
+    price: 49,
+    category: "ชา",
+    desc: "",
+    image: "https://img1.pic.in.th/images/IMG_2190a8c4443c389e766f.jpeg",
+    soldOut: false,
+  },
+  {
+    id: "m3",
+    name: "ชาไทย แยกน้ำ",
+    price: 59,
+    category: "ชา",
+    desc: "",
+    image: "https://img1.pic.in.th/images/IMG_2196.jpeg",
+    soldOut: false,
+  },
+  {
+    id: "m4",
+    name: "ชาเขียวใส่ขวด",
+    price: 39,
+    category: "ชา",
+    desc: "",
+    image: "https://img1.pic.in.th/images/IMG_21873e292ea4053a8ffc.jpeg",
+    soldOut: false,
+  },
+  {
+    id: "m5",
+    name: "ชาเขียว พร้อมดื่ม",
+    price: 49,
+    category: "ชา",
+    desc: "",
+    image: "https://img2.pic.in.th/IMG_2188181a8b87cda4dd49.jpeg",
+    soldOut: false,
+  },
+  {
+    id: "m6",
+    name: "ชาเขียว แยกน้ำ",
+    price: 59,
+    category: "ชา",
+    desc: "",
+    image: "https://img2.pic.in.th/IMG_219580e9dafbb3893ab0.jpeg",
+    soldOut: false,
+  },
+  {
+    id: "m7",
+    name: "กาแฟอเมริกาโน่ ใส่ขวด",
+    price: 49,
+    category: "กาแฟ",
+    desc: "",
+    image: "https://img2.pic.in.th/IMG_21850ef949aa160f4db3.jpeg",
+    soldOut: false,
+  },
+  {
+    id: "m8",
+    name: "กาแฟอเมริกาโน่ พร้อมดื่ม",
+    price: 59,
+    category: "กาแฟ",
+    desc: "",
+    image: "https://img2.pic.in.th/IMG_21891a0d3ea1ed677e1c.jpeg",
+    soldOut: false,
+  },
+  {
+    id: "m9",
+    name: "กาแฟอเมริกาโน่ แยกน้ำ",
+    price: 69,
+    category: "กาแฟ",
+    desc: "",
+    image: "https://img1.pic.in.th/images/IMG_2193.jpeg",
+    soldOut: false,
+  },
+  {
+    id: "m10",
+    name: "กาแฟเอสเพรสโซ่ ใส่ขวด",
+    price: 59,
+    category: "กาแฟ",
+    desc: "สูตรเลิฟชาไทย",
+    image: "https://img1.pic.in.th/images/IMG_2184.jpeg",
+    soldOut: false,
+  },
+  {
+    id: "m11",
+    name: "กาแฟเอสเพรสโซ่ พร้อมดื่ม",
+    price: 69,
+    category: "กาแฟ",
+    desc: "สูตรเลิฟชาไทย",
+    image: "https://img2.pic.in.th/IMG_2191df181ba69ad92828.jpeg",
+    soldOut: false,
+  },
+  {
+    id: "m12",
+    name: "กาแฟเอสเพรสโซ่ แยกน้ำ",
+    price: 79,
+    category: "กาแฟ",
+    desc: "สูตรเลิฟชาไทย",
+    image: "https://img2.pic.in.th/IMG_219412f938d8686ddec1.jpeg",
+    soldOut: false,
+  },
+  {
+    id: "m13",
+    name: "กาแฟลาเต้ ใส่ฟองนม พร้อมดื่ม",
+    price: 79,
+    category: "กาแฟ",
+    desc: "สูตรเลิฟชาไทย",
+    image: "https://img1.pic.in.th/images/IMG_219232c813929f94d627.jpeg",
+    soldOut: false,
+  },
+];
+
+const SWEETNESS_OPTIONS = ["หวานปกติ", "หวานน้อย", "ไม่หวาน", "หวานมาก"];
+
+const ADMIN_PASSCODE = "25052505";
+const STORAGE_KEY = "lovecha_menu_v1";
+
+function loadMenu() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return DEFAULT_MENU;
+}
+function saveMenu(menu) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(menu)); } catch (e) {}
+}
+
+function formatPrice(n) {
+  return n.toLocaleString("th-TH");
+}
+
+/* ---------------------------------------------------
+   สร้างข้อความสรุปออเดอร์
+--------------------------------------------------- */
+function buildOrderMessage(order) {
+  const pickupText =
+    order.pickup.type === "now"
+      ? "รับทันที"
+      : `${order.pickup.date} เวลา ${order.pickup.time} น.`;
+
+  const lines = [];
+  lines.push(`🧾 ออเดอร์ #${order.orderId}`);
+  lines.push("------------------------------");
+  for (const item of order.items) {
+    lines.push(`• ${item.name} x${item.qty} (${item.sweetness}) - ${item.price * item.qty} บาท`);
+  }
+  lines.push("------------------------------");
+  lines.push(`💰 รวม: ${order.total} บาท`);
+  lines.push(`⏰ รับ: ${pickupText}`);
+  lines.push(`💳 ชำระ: ${order.payment === "qr" ? "สแกนจ่าย (QR/พร้อมเพย์)" : "เงินสดหน้าร้าน"}`);
+
+  return lines.join("\n");
+}
+
+/* ---------------------------------------------------
+   ส่งข้อความสรุปออเดอร์เข้าห้องแชท LINE OA ของลูกค้าคนนั้น
+   ใช้ liff.sendMessages() — ใช้ได้เมื่อเปิดผ่าน LINE app (isInClient)
+   และเปิดสิทธิ์ "Chat message" (chat_message.write) ใน LIFF app แล้ว
+--------------------------------------------------- */
+async function sendOrderToLine(order) {
+  if (typeof liff === "undefined" || !liff.isInClient || !liff.isInClient()) {
+    return { ok: false, reason: "not_in_client" };
+  }
+  try {
+    await liff.sendMessages([
+      { type: "text", text: buildOrderMessage(order) },
+    ]);
+    return { ok: true };
+  } catch (e) {
+    console.error("ส่งข้อความเข้า LINE ไม่สำเร็จ:", e);
+    return { ok: false, reason: "send_failed", error: e };
+  }
+}
+
+/* ===================================================
+   ITEM DETAIL SHEET
+=================================================== */
+function ItemSheet({ item, onClose, onAdd }) {
+  const [qty, setQty] = useState(1);
+  const [sweetness, setSweetness] = useState(SWEETNESS_OPTIONS[0]);
+
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-close" onClick={onClose}>✕</div>
+        <img className="item-hero" src={item.image} alt={item.name} />
+        <div className="item-detail-body">
+          <h2 className="item-title display">{item.name}</h2>
+          <div className="item-price mono">{formatPrice(item.price)} บาท</div>
+          <p className="item-desc">{item.desc}</p>
+
+          <div className="section-label">ระดับความหวาน</div>
+          <div className="option-grid">
+            {SWEETNESS_OPTIONS.map((s) => (
+              <div
+                key={s}
+                className={"option-pill" + (sweetness === s ? " active" : "")}
+                onClick={() => setSweetness(s)}
+              >
+                {s}
+              </div>
+            ))}
+          </div>
+
+          <div className="section-label">จำนวน</div>
+          <div className="qty-row">
+            <div className="qty-control">
+              <div className="qty-btn" onClick={() => setQty(Math.max(1, qty - 1))}>–</div>
+              <div className="qty-val">{qty}</div>
+              <div className="qty-btn" onClick={() => setQty(qty + 1)}>+</div>
+            </div>
+            <div className="mono" style={{fontWeight:700, fontSize:18}}>
+              {formatPrice(item.price * qty)} บาท
+            </div>
+          </div>
+
+          <button
+            className="primary-btn"
+            onClick={() => {
+              onAdd({
+                id: Date.now() + "_" + item.id,
+                menuId: item.id,
+                name: item.name,
+                price: item.price,
+                qty,
+                sweetness,
+              });
+              onClose();
+            }}
+          >
+            <span>เพิ่มลงตะกร้า</span>
+            <span className="mono">{formatPrice(item.price * qty)} บาท</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===================================================
+   CHECKOUT SHEET
+=================================================== */
+function CheckoutSheet({ cart, total, onClose, onRemove, onConfirm }) {
+  const [step, setStep] = useState("cart"); // cart -> success
+  const [pickupType, setPickupType] = useState("now"); // now | scheduled
+  const [pickupDate, setPickupDate] = useState("");
+  const [pickupTime, setPickupTime] = useState("");
+  const [payment, setPayment] = useState("qr"); // qr | cash
+  const [orderId, setOrderId] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [lineStatus, setLineStatus] = useState(null); // null | "ok" | "failed"
+
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  const canConfirm =
+    cart.length > 0 &&
+    !submitting &&
+    (pickupType === "now" || (pickupDate && pickupTime));
+
+  const handleConfirm = async () => {
+    setSubmitting(true);
+    const id = "CF" + Math.floor(100000 + Math.random() * 900000);
+    const order = {
+      orderId: id,
+      items: cart,
+      total,
+      pickup:
+        pickupType === "now"
+          ? { type: "now" }
+          : { type: "scheduled", date: pickupDate, time: pickupTime },
+      payment,
+      createdAt: new Date().toISOString(),
+    };
+
+    const result = await sendOrderToLine(order);
+    setLineStatus(result.ok ? "ok" : "failed");
+    setOrderId(id);
+    onConfirm(order);
+    setStep("success");
+    setSubmitting(false);
+  };
+
+  if (step === "success") {
+    return (
+      <div className="overlay">
+        <div className="sheet">
+          <div className="sheet-handle"></div>
+          <div className="success-wrap">
+            <div className={"success-icon" + (lineStatus === "failed" ? " warn" : "")}>
+              {lineStatus === "failed" ? "!" : "✓"}
+            </div>
+            <div className="success-title display">
+              {lineStatus === "failed" ? "บันทึกออเดอร์แล้ว" : "สั่งออเดอร์เรียบร้อย!"}
+            </div>
+            <div className="success-sub">
+              {lineStatus === "ok" && (
+                <>ระบบได้ส่งสรุปออเดอร์เข้าแชทไลน์ของร้านให้แล้ว<br/></>
+              )}
+              {lineStatus === "failed" && (
+                <>ไม่สามารถส่งสรุปออเดอร์เข้าไลน์ได้ในขณะนี้ กรุณาแคปหน้าจอนี้แจ้งร้านโดยตรง<br/></>
+              )}
+              {pickupType === "now"
+                ? "กรุณารอรับที่ร้านได้ทันที"
+                : `กรุณามารับเครื่องดื่มวันที่ ${pickupDate} เวลา ${pickupTime} น.`}
+            </div>
+            <div className="order-id mono">เลขที่ออเดอร์ #{orderId}</div>
+            <button className="primary-btn" style={{justifyContent:"center"}} onClick={onClose}>
+              กลับสู่หน้าเมนู
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-close" onClick={onClose}>✕</div>
+        <div className="sheet-handle"></div>
+
+        {/* Receipt */}
+        <div className="receipt">
+          <div className="receipt-title">รายการสั่งซื้อ</div>
+          {cart.length === 0 && (
+            <div style={{textAlign:"center", color:"var(--ink-soft)", fontSize:13, padding:"10px 0"}}>
+              ตะกร้าว่างเปล่า
+            </div>
+          )}
+          {cart.map((c) => (
+            <div className="receipt-line" key={c.id}>
+              <div className="receipt-line-main">
+                <div className="receipt-line-name">{c.name} ×{c.qty}</div>
+                <div className="receipt-line-meta">ความหวาน: {c.sweetness}</div>
+                <div className="receipt-remove" onClick={() => onRemove(c.id)}>ลบรายการนี้</div>
+              </div>
+              <div className="receipt-line-price mono">{formatPrice(c.price * c.qty)}</div>
+            </div>
+          ))}
+          {cart.length > 0 && (
+            <div className="receipt-total-row">
+              <span>ยอดรวม</span>
+              <span className="mono">{formatPrice(total)} บาท</span>
+            </div>
+          )}
+        </div>
+        <div className="perf"></div>
+
+        {/* Pickup time */}
+        <div className="checkout-section">
+          <div className="section-label">เวลารับเครื่องดื่ม</div>
+          <div className="pickup-grid">
+            <div
+              className={"pickup-card" + (pickupType === "now" ? " active" : "")}
+              onClick={() => setPickupType("now")}
+            >
+              <div className="pickup-card-title">รับทันที</div>
+              <div className="pickup-card-sub">ร้านจะเริ่มทำเครื่องดื่มทันทีที่ได้รับออเดอร์</div>
+            </div>
+            <div
+              className={"pickup-card" + (pickupType === "scheduled" ? " active" : "")}
+              onClick={() => setPickupType("scheduled")}
+            >
+              <div className="pickup-card-title">นัดรับล่วงหน้า</div>
+              <div className="pickup-card-sub">เลือกวันและเวลาที่ต้องการมารับ</div>
+              {pickupType === "scheduled" && (
+                <div className="pickup-inputs" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="date"
+                    min={todayStr}
+                    value={pickupDate}
+                    onChange={(e) => setPickupDate(e.target.value)}
+                  />
+                  <input
+                    type="time"
+                    value={pickupTime}
+                    onChange={(e) => setPickupTime(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Payment */}
+        <div className="checkout-section">
+          <div className="section-label">วิธีชำระเงิน</div>
+          <div className="pay-grid">
+            <div
+              className={"pickup-card" + (payment === "qr" ? " active" : "")}
+              onClick={() => setPayment("qr")}
+            >
+              <div className="pickup-card-title">สแกนจ่าย (พร้อมเพย์ / QR)</div>
+              <div className="pickup-card-sub">ชำระผ่าน QR Code ก่อนเข้ารับสินค้า</div>
+            </div>
+            <div
+              className={"pickup-card" + (payment === "cash" ? " active" : "")}
+              onClick={() => setPayment("cash")}
+            >
+              <div className="pickup-card-title">เงินสดหน้าร้าน</div>
+              <div className="pickup-card-sub">ชำระเงินสดเมื่อมารับเครื่องดื่ม</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="checkout-section" style={{paddingBottom:24}}>
+          <button className="primary-btn" disabled={!canConfirm} onClick={handleConfirm}>
+            <span>{submitting ? "กำลังส่งออเดอร์..." : "ยืนยันการสั่งซื้อ"}</span>
+            <span className="mono">{formatPrice(total)} บาท</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===================================================
+   CUSTOMER MENU PAGE
+=================================================== */
+function MenuPage({ menu, onGoAdmin }) {
+  const categories = useMemo(() => {
+    const set = new Set(menu.map((m) => m.category));
+    return ["ทั้งหมด", ...Array.from(set)];
+  }, [menu]);
+
+  const [activeCat, setActiveCat] = useState("ทั้งหมด");
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [cart, setCart] = useState([]);
+  const [showCheckout, setShowCheckout] = useState(false);
+
+  const filtered = menu.filter(
+    (m) => activeCat === "ทั้งหมด" || m.category === activeCat
+  );
+
+  const total = cart.reduce((sum, c) => sum + c.price * c.qty, 0);
+  const cartCount = cart.reduce((sum, c) => sum + c.qty, 0);
+
+  const handleAdd = (entry) => setCart((prev) => [...prev, entry]);
+  const handleRemove = (id) => setCart((prev) => prev.filter((c) => c.id !== id));
+
+  const handleConfirmOrder = (order) => {
+    setCart([]);
+  };
+
+  return (
+    <div className="app">
+      <div className="topbar">
+        <div className="topbar-row">
+          <div>
+            <div className="brand-eyebrow">Tea &amp; Coffee House</div>
+            <div className="brand display">เลิฟชาไทย</div>
+          </div>
+          <a className="admin-link" href="#" onClick={(e) => { e.preventDefault(); onGoAdmin(); }}>
+            ⚙ จัดการเมนู
+          </a>
+        </div>
+        <div className="chips">
+          {categories.map((c) => (
+            <div
+              key={c}
+              className={"chip" + (activeCat === c ? " active" : "")}
+              onClick={() => setActiveCat(c)}
+            >
+              {c}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="menu-list">
+        {filtered.length === 0 && (
+          <div className="empty-state">
+            <div className="display">ยังไม่มีเมนูในหมวดนี้</div>
+            <div>ลองเลือกหมวดหมู่อื่นดูนะคะ</div>
+          </div>
+        )}
+        {filtered.map((item) => (
+          <div
+            key={item.id}
+            className={"menu-card" + (item.soldOut ? " soldout" : "")}
+            onClick={() => !item.soldOut && setSelectedItem(item)}
+          >
+            <img src={item.image} alt={item.name} />
+            <div className="menu-card-body">
+              {item.soldOut && <span className="soldout-tag">หมดชั่วคราว</span>}
+              <div className="menu-card-name">{item.name}</div>
+              <div className="menu-card-desc">{item.desc}</div>
+              <div className="menu-card-price mono">{formatPrice(item.price)} บาท</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {cartCount > 0 && (
+        <div className="cart-bar" onClick={() => setShowCheckout(true)}>
+          <div className="cart-bar-left">
+            <div className="cart-badge">{cartCount}</div>
+            <div className="cart-bar-text">ดูตะกร้า / เช็คเอาท์</div>
+          </div>
+          <div className="cart-bar-total mono">{formatPrice(total)} บาท</div>
+        </div>
+      )}
+
+      {selectedItem && (
+        <ItemSheet
+          item={selectedItem}
+          onClose={() => setSelectedItem(null)}
+          onAdd={handleAdd}
+        />
+      )}
+
+      {showCheckout && (
+        <CheckoutSheet
+          cart={cart}
+          total={total}
+          onClose={() => setShowCheckout(false)}
+          onRemove={handleRemove}
+          onConfirm={handleConfirmOrder}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ===================================================
+   ADMIN LOGIN GATE
+=================================================== */
+function AdminLogin({ onSuccess, onBack }) {
+  const [code, setCode] = useState("");
+  const [error, setError] = useState(false);
+
+  const submit = () => {
+    if (code === ADMIN_PASSCODE) {
+      onSuccess();
+    } else {
+      setError(true);
+      setCode("");
+    }
+  };
+
+  return (
+    <div className="app">
+      <div className="admin-bar">
+        <div>
+          <div className="brand-eyebrow">Admin</div>
+          <div className="brand display" style={{fontSize:22}}>เข้าสู่ระบบจัดการ</div>
+        </div>
+        <a className="admin-link" href="#" onClick={(e) => { e.preventDefault(); onBack(); }}>← กลับหน้าร้าน</a>
+      </div>
+      <div className="checkout-section" style={{paddingTop:40}}>
+        <div className="form-field">
+          <label className="form-label">รหัสผ่านสำหรับเจ้าของร้าน</label>
+          <input
+            className="form-input"
+            type="password"
+            inputMode="numeric"
+            value={code}
+            onChange={(e) => { setCode(e.target.value); setError(false); }}
+            onKeyDown={(e) => e.key === "Enter" && submit()}
+            placeholder="กรอกรหัสผ่าน"
+            autoFocus
+          />
+          {error && (
+            <div style={{color:"var(--terracotta)", fontSize:12.5, marginTop:8, fontWeight:600}}>
+              รหัสผ่านไม่ถูกต้อง กรุณาลองอีกครั้ง
+            </div>
+          )}
+        </div>
+        <button className="primary-btn" style={{justifyContent:"center", marginTop:6}} onClick={submit}>
+          เข้าสู่ระบบ
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ===================================================
+   ADMIN PAGE
+=================================================== */
+const EMPTY_FORM = { name: "", price: "", category: "", desc: "", image: "", soldOut: false };
+
+function AdminPage({ menu, setMenu, onBack }) {
+  const [editing, setEditing] = useState(null); // item id or "new" or null
+  const [form, setForm] = useState(EMPTY_FORM);
+
+  const startEdit = (item) => {
+    setEditing(item.id);
+    setForm({ ...item, price: String(item.price) });
+  };
+  const startNew = () => {
+    setEditing("new");
+    setForm(EMPTY_FORM);
+  };
+  const cancelEdit = () => { setEditing(null); setForm(EMPTY_FORM); };
+
+  const save = () => {
+    if (!form.name || !form.price) return;
+    if (editing === "new") {
+      const newItem = {
+        ...form,
+        id: "m" + Date.now(),
+        price: Number(form.price) || 0,
+        category: form.category || "อื่นๆ",
+        image: form.image || "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=400&fit=crop",
+        soldOut: !!form.soldOut,
+      };
+      setMenu([...menu, newItem]);
+    } else {
+      setMenu(menu.map((m) => (m.id === editing ? { ...m, ...form, price: Number(form.price) || 0 } : m)));
+    }
+    cancelEdit();
+  };
+
+  const remove = (id) => {
+    if (confirm("ต้องการลบเมนูนี้ใช่หรือไม่?")) {
+      setMenu(menu.filter((m) => m.id !== id));
+    }
+  };
+
+  const toggleSoldOut = (id) => {
+    setMenu(menu.map((m) => (m.id === id ? { ...m, soldOut: !m.soldOut } : m)));
+  };
+
+  if (editing) {
+    return (
+      <div className="app">
+        <div className="admin-bar">
+          <div className="brand display" style={{fontSize:22}}>
+            {editing === "new" ? "เพิ่มเมนูใหม่" : "แก้ไขเมนู"}
+          </div>
+          <a className="admin-link" href="#" onClick={(e) => { e.preventDefault(); cancelEdit(); }}>ยกเลิก</a>
+        </div>
+        <div className="checkout-section" style={{paddingTop:18}}>
+          <div className="form-field">
+            <label className="form-label">ชื่อเมนู</label>
+            <input className="form-input" value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="เช่น มัทฉะลาเต้" />
+          </div>
+          <div className="form-field">
+            <label className="form-label">ราคา (บาท)</label>
+            <input className="form-input" type="number" value={form.price}
+              onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="65" />
+          </div>
+          <div className="form-field">
+            <label className="form-label">หมวดหมู่</label>
+            <input className="form-input" value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="ชา / กาแฟ / เครื่องดื่มอื่นๆ" />
+          </div>
+          <div className="form-field">
+            <label className="form-label">คำอธิบาย</label>
+            <textarea className="form-textarea" rows="3" value={form.desc}
+              onChange={(e) => setForm({ ...form, desc: e.target.value })} placeholder="บอกลูกค้าว่าเครื่องดื่มนี้เป็นอย่างไร" />
+          </div>
+          <div className="form-field">
+            <label className="form-label">URL รูปภาพ</label>
+            <input className="form-input" value={form.image}
+              onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://..." />
+          </div>
+          <div className="form-field" style={{display:"flex", alignItems:"center", gap:10}}>
+            <input type="checkbox" id="soldout" checked={!!form.soldOut}
+              onChange={(e) => setForm({ ...form, soldOut: e.target.checked })} style={{width:18,height:18}} />
+            <label htmlFor="soldout" className="form-label" style={{margin:0}}>เมนูนี้หมดชั่วคราว</label>
+          </div>
+          <button className="primary-btn" style={{justifyContent:"center", marginTop:6}} onClick={save}>
+            บันทึกเมนู
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="app">
+      <div className="admin-bar">
+        <div>
+          <div className="brand-eyebrow">Admin</div>
+          <div className="brand display" style={{fontSize:22}}>จัดการเมนู</div>
+        </div>
+        <a className="admin-link" href="#" onClick={(e) => { e.preventDefault(); onBack(); }}>← กลับหน้าร้าน</a>
+      </div>
+      <div className="admin-list">
+        {menu.map((item) => (
+          <div className="admin-card" key={item.id}>
+            <img src={item.image} alt={item.name} />
+            <div className="admin-card-body">
+              <div className="admin-card-name">
+                {item.name} {item.soldOut && <span style={{color:"var(--ink-soft)", fontSize:11}}>(หมดชั่วคราว)</span>}
+              </div>
+              <div className="admin-card-price mono">{formatPrice(item.price)} บาท · {item.category}</div>
+            </div>
+            <div className="admin-actions">
+              <div className="icon-btn" title="หมด/มี" onClick={() => toggleSoldOut(item.id)}>
+                {item.soldOut ? "🔔" : "🚫"}
+              </div>
+              <div className="icon-btn" title="แก้ไข" onClick={() => startEdit(item)}>✎</div>
+              <div className="icon-btn danger" title="ลบ" onClick={() => remove(item.id)}>🗑</div>
+            </div>
+          </div>
+        ))}
+        <button className="add-btn" onClick={startNew}>+ เพิ่มเมนูใหม่</button>
+      </div>
+    </div>
+  );
+}
+
+/* ===================================================
+   ROOT APP
+=================================================== */
+function App() {
+  const [menu, setMenuState] = useState(loadMenu());
+  const [page, setPage] = useState("menu"); // menu | adminLogin | admin
+  const [liffReady, setLiffReady] = useState(false);
+  const [liffError, setLiffError] = useState(null);
+
+  const setMenu = (newMenu) => {
+    setMenuState(newMenu);
+    saveMenu(newMenu);
+  };
+
+  useEffect(() => {
+    async function initLIFF() {
+      try {
+        if (typeof liff === "undefined") {
+          // ไม่มี LIFF SDK (เช่น เปิดทดสอบในเบราว์เซอร์ทั่วไป) - ปล่อยให้ใช้งานต่อได้
+          setLiffReady(true);
+          return;
+        }
+        await liff.init({ liffId: window.LIFF_ID });
+
+        if (!liff.isLoggedIn() && !liff.isInClient()) {
+          // เปิดจากเบราว์เซอร์นอก LINE และยังไม่ login - ให้ login ก่อน
+          liff.login();
+          return;
+        }
+
+        setLiffReady(true);
+      } catch (e) {
+        console.error("LIFF init error:", e);
+        setLiffError(e);
+        // อนุญาตให้ใช้งานต่อได้แม้ LIFF init ไม่สำเร็จ (เช่น เปิดทดสอบนอก LINE)
+        setLiffReady(true);
+      }
+    }
+    initLIFF();
+  }, []);
+
+  if (!liffReady) {
+    return (
+      <div className="loading-screen">
+        <div className="display" style={{fontSize:20, color:"var(--ink)"}}>เลิฟชาไทย</div>
+        <div>กำลังโหลด...</div>
+      </div>
+    );
+  }
+
+  if (page === "menu") {
+    return <MenuPage menu={menu} onGoAdmin={() => setPage("adminLogin")} />;
+  }
+  if (page === "adminLogin") {
+    return <AdminLogin onSuccess={() => setPage("admin")} onBack={() => setPage("menu")} />;
+  }
+  return <AdminPage menu={menu} setMenu={setMenu} onBack={() => setPage("menu")} />;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
