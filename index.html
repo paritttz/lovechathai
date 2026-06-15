@@ -495,9 +495,13 @@ function buildOrderMessage(order) {
     lines.push(`• ${item.name} x${item.qty} (${item.sweetness}) - ${item.price * item.qty} บาท`);
   }
   lines.push("------------------------------");
+  if (order.discount) {
+    lines.push(`ยอดก่อนลด: ${order.subtotal} บาท`);
+    lines.push(`ส่วนลดรับเองที่ร้าน 30%: -${order.discount} บาท`);
+  }
   lines.push(`💰 รวม: ${order.total} บาท`);
   lines.push(`⏰ รับ: ${pickupText}`);
-  lines.push(`💳 ชำระ: ${order.payment === "qr" ? "สแกนจ่าย (QR/พร้อมเพย์)" : "เงินสดหน้าร้าน"}`);
+  lines.push(`💳 ชำระ: ${order.payment === "qr" ? "สแกนจ่าย" : "เงินสดหน้าร้าน"}`);
 
   return lines.join("\n");
 }
@@ -612,10 +616,12 @@ function CheckoutSheet({ cart, total, onClose, onRemove, onConfirm }) {
   const handleConfirm = async () => {
     setSubmitting(true);
     const id = "CF" + Math.floor(100000 + Math.random() * 900000);
-    const order = {
+  const order = {
       orderId: id,
       items: cart,
-      total,
+      total: finalTotal,
+      subtotal: total,
+      discount,
       pickup:
         pickupType === "now"
           ? { type: "now" }
