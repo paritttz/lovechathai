@@ -330,7 +330,7 @@
 <div id="root"></div>
 <script>
   // ===== ตั้งค่า LIFF ID ตรงนี้ =====
-  window.LIFF_ID = "2010384455-EvksecH8"; // เช่น "1234567890-abcdefgh"
+  // window.LIFF_ID = "2010384455-EvksecH8"; // เช่น "1234567890-abcdefgh"
 </script>
 <script type="text/babel" data-presets="env,react">
 const { useState, useEffect, useMemo } = React;
@@ -459,6 +459,7 @@ const DEFAULT_MENU = [
 ];
 
 const SWEETNESS_OPTIONS = ["หวานปกติ", "หวานน้อย", "ไม่หวาน", "หวานมาก"];
+const DISCOUNT_RATE = 0.30; // ลด 30% สำหรับรับเองที่ร้าน
 
 const ADMIN_PASSCODE = "25052505";
 const STORAGE_KEY = "lovecha_menu_v1";
@@ -493,7 +494,11 @@ function buildOrderMessage(order) {
   for (const item of order.items) {
     lines.push(`• ${item.name} x${item.qty} (${item.sweetness}) - ${item.price * item.qty} บาท`);
   }
-  lines.push("------------------------------");
+lines.push("------------------------------");
+  if (order.discount) {
+    lines.push(`ยอดก่อนลด: ${order.subtotal} บาท`);
+    lines.push(`ส่วนลดรับเองที่ร้าน 30%: -${order.discount} บาท`);
+  }
   lines.push(`💰 รวม: ${order.total} บาท`);
   lines.push(`⏰ รับ: ${pickupText}`);
   lines.push(`💳 ชำระ: ${order.payment === "qr" ? "สแกนจ่าย (QR/พร้อมเพย์)" : "เงินสดหน้าร้าน"}`);
@@ -590,6 +595,8 @@ function ItemSheet({ item, onClose, onAdd }) {
    CHECKOUT SHEET
 =================================================== */
 function CheckoutSheet({ cart, total, onClose, onRemove, onConfirm }) {
+  const discount = Math.round(total * DISCOUNT_RATE);
+  const finalTotal = total - discount;
   const [step, setStep] = useState("cart"); // cart -> success
   const [pickupType, setPickupType] = useState("now"); // now | scheduled
   const [pickupDate, setPickupDate] = useState("");
@@ -687,10 +694,20 @@ function CheckoutSheet({ cart, total, onClose, onRemove, onConfirm }) {
             </div>
           ))}
           {cart.length > 0 && (
-            <div className="receipt-total-row">
-              <span>ยอดรวม</span>
-              <span className="mono">{formatPrice(total)} บาท</span>
-            </div>
+            <>
+              <div className="receipt-line" style={{borderBottom:"none", color:"var(--ink-soft)"}}>
+                <div className="receipt-line-main">ยอดก่อนลด</div>
+                <div className="receipt-line-price mono">{formatPrice(total)}</div>
+              </div>
+              <div className="receipt-line" style={{borderBottom:"none", color:"var(--terracotta)"}}>
+                <div className="receipt-line-main">ส่วนลดรับเองที่ร้าน 30%</div>
+                <div className="receipt-line-price mono">-{formatPrice(discount)}</div>
+              </div>
+              <div className="receipt-total-row">
+                <span>ยอดสุทธิ</span>
+                <span className="mono">{formatPrice(finalTotal)} บาท</span>
+              </div>
+            </>
           )}
         </div>
         <div className="perf"></div>
@@ -755,7 +772,7 @@ function CheckoutSheet({ cart, total, onClose, onRemove, onConfirm }) {
         <div className="checkout-section" style={{paddingBottom:24}}>
           <button className="primary-btn" disabled={!canConfirm} onClick={handleConfirm}>
             <span>{submitting ? "กำลังส่งออเดอร์..." : "ยืนยันการสั่งซื้อ"}</span>
-            <span className="mono">{formatPrice(total)} บาท</span>
+            <span className="mono">{formatPrice(finalTotal)} บาท</span>
           </button>
         </div>
       </div>
@@ -796,7 +813,7 @@ function MenuPage({ menu, onGoAdmin }) {
       <div className="topbar">
         <div className="topbar-row">
           <div>
-            <div className="brand-eyebrow">Tea &amp; Coffee House</div>
+            <div className="brand-eyebrow">รับเอง ลดราคา 30%</div>
             <div className="brand display">เลิฟชาไทย</div>
           </div>
           <a className="admin-link" href="#" onClick={(e) => { e.preventDefault(); onGoAdmin(); }}>
@@ -846,7 +863,7 @@ function MenuPage({ menu, onGoAdmin }) {
             <div className="cart-badge">{cartCount}</div>
             <div className="cart-bar-text">ดูตะกร้า / เช็คเอาท์</div>
           </div>
-          <div className="cart-bar-total mono">{formatPrice(total)} บาท</div>
+          <div className="cart-bar-total mono">{formatPrice(Math.round(total * (1 - DISCOUNT_RATE)))} บาท</div>
         </div>
       )}
 
