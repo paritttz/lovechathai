@@ -513,17 +513,16 @@ async function sendOrderToLine(order) {
     return { ok: false, reason: "not_in_client" };
   }
   try {
-    const messages = [
+    await liff.sendMessages([
       { type: "text", text: buildOrderMessage(order) },
-    ];
+    ]);
 
-    // ถ้าชำระแบบสแกนจ่าย ส่งข้อความ trigger สั้นๆ ตามไป
-    // เพื่อให้ระบบตอบกลับอัตโนมัติ (Auto-reply) ของ LINE OA ส่ง QR code กลับมา
     if (order.payment === "qr") {
-      messages.push({ type: "text", text: "ขอ QR พร้อมเพย์" });
+      await liff.sendMessages([
+        { type: "text", text: "ขอ QR พร้อมเพย์" },
+      ]);
     }
 
-    await liff.sendMessages(messages);
     return { ok: true };
   } catch (e) {
     console.error("ส่งข้อความเข้า LINE ไม่สำเร็จ:", e);
