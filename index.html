@@ -496,7 +496,7 @@ function buildOrderMessage(order) {
   }
   lines.push("------------------------------");
   //lines.push(`ยอดก่อนลด: ${order.subtotal} บาท`);
-  lines.push(`ส่วนลดรับเองที่ร้าน 30% รวม: -${order.discount} บาท`);
+  lines.push(`ส่วนลดรับเองที่ร้าน 30% รวมยอดชำระ: -${order.finalTotal} บาท`);
   //lines.push(`💰 รวม: ${order.total} บาท`);
   lines.push(`⏰ รับ: ${pickupText}`);
   lines.push(`💳 ชำระ: ${order.payment === "qr" ? "สแกนจ่าย" : "เงินสดหน้าร้าน"}`);
