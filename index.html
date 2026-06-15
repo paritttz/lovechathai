@@ -330,7 +330,7 @@
 <div id="root"></div>
 <script>
   // ===== ตั้งค่า LIFF ID ตรงนี้ =====
-window.LIFF_ID = "2010384455-EvksecH8"; // เช่น "1234567890-abcdefgh"
+  window.LIFF_ID = "2010384455-EvksecH8"; // เช่น "1234567890-abcdefgh"
 </script>
 <script type="text/babel" data-presets="env,react">
 const { useState, useEffect, useMemo } = React;
@@ -494,11 +494,7 @@ function buildOrderMessage(order) {
   for (const item of order.items) {
     lines.push(`• ${item.name} x${item.qty} (${item.sweetness}) - ${item.price * item.qty} บาท`);
   }
-lines.push("------------------------------");
-  if (order.discount) {
-    lines.push(`ยอดก่อนลด: ${order.subtotal} บาท`);
-    lines.push(`ส่วนลดรับเองที่ร้าน 30%: -${order.discount} บาท`);
-  }
+  lines.push("------------------------------");
   lines.push(`💰 รวม: ${order.total} บาท`);
   lines.push(`⏰ รับ: ${pickupText}`);
   lines.push(`💳 ชำระ: ${order.payment === "qr" ? "สแกนจ่าย (QR/พร้อมเพย์)" : "เงินสดหน้าร้าน"}`);
