@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>เลิฟชาไทย — สั่งเครื่องดื่ม</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -10,47 +13,20 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
 <script>
-(function () {
-  const url = new URL(window.location.href);
+  // Force reload เมื่อโค้ดมีการอัปเดต
+  // *** แก้เลขนี้ทุกครั้งที่ push ขึ้น GitHub ***
+  const BUILD_TIME = "20260624-01";
 
-  // ✅ ใส่ version ถ้ายังไม่มี
-  if (!url.searchParams.get("v")) {
-    url.searchParams.set("v", Date.now());
-    window.location.replace(url.toString());
-    return;
-  }
-
-  const v = url.searchParams.get("v");
-
-  // ✅ กัน LIFF cache
-  window.addEventListener("pageshow", function (event) {
-    if (event.persisted) {
-      window.location.reload();
+  const cached = sessionStorage.getItem("build_time");
+  if (cached !== BUILD_TIME) {
+    sessionStorage.setItem("build_time", BUILD_TIME);
+    if (cached !== null) {
+      location.reload(true);
     }
-  });
-
-  // ✅ โหลด CSS แบบไม่ cache
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = `style.css?v=${v}`;
-  document.head.appendChild(link);
-
-  // ✅ โหลด JS แบบไม่ cache
-  const script = document.createElement("script");
-  script.src = `app.js?v=${v}`;
-  script.defer = true;
-  document.head.appendChild(script);
-
-})();
+  }
 </script>
-
-<!-- กัน browser cache -->
-
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-<meta http-equiv="Pragma" content="no-cache" />
-<meta http-equiv="Expires" content="0" />
-
 
 <style>
   :root{
@@ -372,7 +348,7 @@
 <div id="root"></div>
 <script>
   // ===== ตั้งค่า LIFF ID ตรงนี้ =====
-  window.LIFF_ID = "2010384455-EvksecH8"; // เช่น "1234567890-abcdefgh"
+   window.LIFF_ID = "2010384455-EvksecH8"; // เช่น "1234567890-abcdefgh"
 </script>
 <script type="text/babel" data-presets="env,react">
 const { useState, useEffect, useMemo } = React;
@@ -533,6 +509,7 @@ const DEFAULT_MENU = [
     desc: "",
     image: "https://img2.pic.in.th/IMG_263687d32eb5f6c6a0c0.md.jpg",
     soldOut: false,
+    hasSweetness: false,
   },
 ];
 
@@ -625,18 +602,22 @@ function ItemSheet({ item, onClose, onAdd }) {
           <div className="item-price mono">{formatPrice(item.price)} บาท</div>
           <p className="item-desc">{item.desc}</p>
 
-          <div className="section-label">ระดับความหวาน</div>
-          <div className="option-grid">
-            {SWEETNESS_OPTIONS.map((s) => (
-              <div
-                key={s}
-                className={"option-pill" + (sweetness === s ? " active" : "")}
-                onClick={() => setSweetness(s)}
-              >
-                {s}
+            {item.hasSweetness !== false && (
+            <>
+              <div className="section-label">ระดับความหวาน</div>
+              <div className="option-grid">
+                {SWEETNESS_OPTIONS.map((s) => (
+                  <div
+                    key={s}
+                    className={"option-pill" + (sweetness === s ? " active" : "")}
+                    onClick={() => setSweetness(s)}
+                  >
+                    {s}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
 
           <div className="section-label">จำนวน</div>
           <div className="qty-row">
@@ -659,7 +640,7 @@ function ItemSheet({ item, onClose, onAdd }) {
                 name: item.name,
                 price: item.price,
                 qty,
-                sweetness,
+                sweetness: item.hasSweetness !== false ? sweetness : "-",
               });
               onClose();
             }}
