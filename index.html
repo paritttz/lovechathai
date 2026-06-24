@@ -14,22 +14,44 @@
 (function () {
   const url = new URL(window.location.href);
 
-  // ถ้ายังไม่มี v → ใส่ timestamp
+  // ✅ ใส่ version ถ้ายังไม่มี
   if (!url.searchParams.get("v")) {
     url.searchParams.set("v", Date.now());
     window.location.replace(url.toString());
+    return;
   }
+
+  const v = url.searchParams.get("v");
+
+  // ✅ กัน LIFF cache
+  window.addEventListener("pageshow", function (event) {
+    if (event.persisted) {
+      window.location.reload();
+    }
+  });
+
+  // ✅ โหลด CSS แบบไม่ cache
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = `style.css?v=${v}`;
+  document.head.appendChild(link);
+
+  // ✅ โหลด JS แบบไม่ cache
+  const script = document.createElement("script");
+  script.src = `app.js?v=${v}`;
+  script.defer = true;
+  document.head.appendChild(script);
+
 })();
 </script>
-<script>
-liff.init({ liffId: "2010384455-EvksecH8" }).then(() => {
-  // บังคับให้หน้าใหม่จริง
-  if (!sessionStorage.getItem("fresh")) {
-    sessionStorage.setItem("fresh", "1");
-    window.location.href = window.location.href + "&reload=" + Date.now();
-  }
-});
-</script>
+
+<!-- กัน browser cache -->
+
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+
+
 <style>
   :root{
     --bg:#FAF6F0;
