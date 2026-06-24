@@ -21,6 +21,15 @@
   }
 })();
 </script>
+<script>
+liff.init({ liffId: "2010384455-EvksecH8" }).then(() => {
+  // บังคับให้หน้าใหม่จริง
+  if (!sessionStorage.getItem("fresh")) {
+    sessionStorage.setItem("fresh", "1");
+    window.location.href = window.location.href + "&reload=" + Date.now();
+  }
+});
+</script>
 <style>
   :root{
     --bg:#FAF6F0;
