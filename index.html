@@ -17,7 +17,7 @@
 <script>
   // Force reload เมื่อโค้ดมีการอัปเดต
   // *** แก้เลขนี้ทุกครั้งที่ push ขึ้น GitHub ***
-  const BUILD_TIME = "20260624-01";
+  const BUILD_TIME = "20260624-02";
 
   const cached = sessionStorage.getItem("build_time");
   if (cached !== BUILD_TIME) {
@@ -508,6 +508,16 @@ const DEFAULT_MENU = [
     category: "อื่นๆ",
     desc: "",
     image: "https://img2.pic.in.th/IMG_263687d32eb5f6c6a0c0.md.jpg",
+    soldOut: false,
+    hasSweetness: false,
+  },
+  {
+    id: "m18",
+    name: "น้ำแข็ง + แก้ว",
+    price: 10,
+    category: "อื่นๆ",
+    desc: "",
+    image: "https://img1.pic.in.th/images/IMG_2642.md.jpg",
     soldOut: false,
     hasSweetness: false,
   },
